@@ -1,0 +1,17 @@
+{
+    "tableReference": {
+      "projectId": "gcp-de-batch-sim-458416",
+      "datasetId": "Employee_Details_raw",
+      "tableId": "Department_raw"
+    },
+    "schema": {
+      "fields": [
+        {"name": "DepartmentID", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "Name", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "GroupName", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "ModifiedDate", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "RawIngestionTime", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "RawFileSize", "type": "INTEGER", "mode": "REQUIRED"}
+      ]
+    }
+  }
