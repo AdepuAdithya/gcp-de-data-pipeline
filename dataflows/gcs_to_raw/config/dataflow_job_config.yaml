@@ -1,4 +1,5 @@
 job_name: "department-ingestion-job"
+runner: "DataflowRunner"
 gcs_input_path: "gs://gcp-de-batch-data-1/Department.csv"
 bigquery_output_table: "gcp-de-batch-sim-458416:Employee_Details_raw.Department_raw"
 temp_location: "gs://gcp-de-batch-data-1/temp"
