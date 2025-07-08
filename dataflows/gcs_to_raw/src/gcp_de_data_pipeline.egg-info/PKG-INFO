@@ -1,5 +1,0 @@
-Metadata-Version: 2.4
-Name: gcp-de-data-pipeline
-Version: 0.1
-Requires-Dist: apache-beam[gcp]
-Dynamic: requires-dist
