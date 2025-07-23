@@ -15,10 +15,11 @@ class ParseDepartmentFn(beam.DoFn):
                 return []
             row = next(csv.reader([element]))
             parsed = {
-                'DepartmentID': int(row[0]),
-                'Name': row[1],
-                'GroupName': row[2],
-                'ModifiedDate': row[3],
+                'BusinessEntityID': row[0],
+                'RateChangeDate': row[1],
+                'Rate': row[2],
+                'PayFrequency': row[3],
+                'ModifiedDate': row[4],
                 'RawIngestionTime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
                 'RawFileSize': self.raw_file_size
             }
@@ -38,12 +39,12 @@ def run():
         temp_location='gs://gcp-de-batch-data-3/temp',
         staging_location='gs://gcp-de-batch-data-3/staging',
         region='us-east1',
-        job_name='department-ingestion-job',
+        job_name='EmpPayHis-raw-ingestion-job',
         save_main_session=True  # Required for some Beam runners to serialize classes
     )
 
-    input_file = 'gs://gcp-de-batch-data-3/Department.csv'
-    output_table = 'gcp-de-batch-sim-464816:Employee_Details_raw.Department_raw'
+    input_file = 'gs://gcp-de-batch-data-3/EmployeePayHistory.csv'
+    output_table = 'gcp-de-batch-sim-464816:Employee_Details_raw.EmployeePayHistory_raw'
 
     with beam.Pipeline(options=options) as p:
         (
@@ -54,8 +55,9 @@ def run():
                 table=output_table,
                 method='STREAMING_INSERTS',
                 schema=(
-                    'DepartmentID:INTEGER, Name:STRING, GroupName:STRING, '
-                    'ModifiedDate:STRING, RawIngestionTime:TIMESTAMP, RawFileSize:STRING'
+                    'BusinessEntityID:INTEGER, RateChangeDate:STRING, Rate:FLOAT, '
+                    'PayFrequency:INTEGER, ModifiedDate:STRING, '
+                    'RawIngestionTime:TIMESTAMP, RawFileSize:STRING'
                 ),
                 create_disposition='CREATE_IF_NEEDED',
                 write_disposition='WRITE_APPEND'

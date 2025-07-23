@@ -15,7 +15,7 @@ class ParseDepartmentFn(beam.DoFn):
                 return []
             row = next(csv.reader([element]))
             parsed = {
-                'DepartmentID': int(row[0]),
+                'DepartmentID': (row[0]),
                 'Name': row[1],
                 'GroupName': row[2],
                 'ModifiedDate': row[3],
@@ -38,7 +38,7 @@ def run():
         temp_location='gs://gcp-de-batch-data-3/temp',
         staging_location='gs://gcp-de-batch-data-3/staging',
         region='us-east1',
-        job_name='department-ingestion-job',
+        job_name='Department-raw-ingestion-job',
         save_main_session=True  # Required for some Beam runners to serialize classes
     )
 
