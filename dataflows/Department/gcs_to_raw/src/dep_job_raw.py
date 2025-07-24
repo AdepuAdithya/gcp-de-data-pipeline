@@ -4,6 +4,7 @@ from apache_beam.io.gcp.bigquery import WriteToBigQuery
 import datetime
 import csv
 import logging
+from google.cloud import storage
 
 class ParseDepartmentFn(beam.DoFn):
     def __init__(self, raw_file_size):
@@ -15,12 +16,10 @@ class ParseDepartmentFn(beam.DoFn):
                 return []
             row = next(csv.reader([element]))
             parsed = {
-                'BusinessEntityID': row[0],
-                'DepartmentID': row[1],
-                'ShiftID': row[2],
-                'StartDate': row[3],
-                'EndDate': row[4],
-                'ModifiedDate': row[5],
+                'DepartmentID': int(row[0]),
+                'Name': row[1],
+                'GroupName': row[2],
+                'ModifiedDate': row[3],
                 'RawIngestionTime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
                 'RawFileSize': self.raw_file_size
             }
@@ -30,9 +29,19 @@ class ParseDepartmentFn(beam.DoFn):
             logging.warning(f"Failed to parse: {element} | Error: {e}")
             return []
 
+def get_file_size(bucket_name, blob_name):
+    client = storage.Client()
+    bucket = client.get_bucket(bucket_name)
+    blob = bucket.get_blob(blob_name)
+    size_in_kb = blob.size / 1024
+    return f"{size_in_kb:.2f} KB"
+
 def run():
-    # Hardcoded for now; replace this logic with dynamic GCS size fetch if needed
-    file_size = "2483"  # Size in bytes or label it in KB ("2.4KB")
+    bucket_name = 'gcp-de-batch-data-3'
+    blob_name = 'Department.csv'
+    file_size = get_file_size(bucket_name, blob_name)
+
+    print(f"Fetched file size from GCS: {file_size}")
 
     options = PipelineOptions(
         runner='DataflowRunner',
@@ -40,12 +49,12 @@ def run():
         temp_location='gs://gcp-de-batch-data-3/temp',
         staging_location='gs://gcp-de-batch-data-3/staging',
         region='us-east1',
-        job_name='EmpDepHis-raw-ingestion-job',
-        save_main_session=True  # Required for some Beam runners to serialize classes
+        job_name='dep-raw-job',
+        save_main_session=True
     )
 
-    input_file = 'gs://gcp-de-batch-data-3/EmployeeDepartmentHistory.csv'
-    output_table = 'gcp-de-batch-sim-464816:Employee_Details_raw.EmployeeDepartmentHistory_raw'
+    input_file = f'gs://{bucket_name}/{blob_name}'
+    output_table = 'gcp-de-batch-sim-464816:Employee_Details_raw.Department_raw'
 
     with beam.Pipeline(options=options) as p:
         (
@@ -56,9 +65,8 @@ def run():
                 table=output_table,
                 method='STREAMING_INSERTS',
                 schema=(
-                    'BusinessEntityID:INTEGER, DepartmentID:INTEGER, ShiftID:INTEGER, '
-                    'StartDate:DATE, EndDate:DATE, ModifiedDate:STRING, '
-                    'RawIngestionTime:TIMESTAMP, RawFileSize:STRING'
+                    'DepartmentID:INTEGER, Name:STRING, GroupName:STRING, '
+                    'ModifiedDate:STRING, RawIngestionTime:TIMESTAMP, RawFileSize:STRING'
                 ),
                 create_disposition='CREATE_IF_NEEDED',
                 write_disposition='WRITE_APPEND'

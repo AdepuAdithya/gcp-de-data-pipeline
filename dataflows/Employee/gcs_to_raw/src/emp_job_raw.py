@@ -15,10 +15,22 @@ class ParseDepartmentFn(beam.DoFn):
                 return []
             row = next(csv.reader([element]))
             parsed = {
-                'DepartmentID': (row[0]),
-                'Name': row[1],
-                'GroupName': row[2],
-                'ModifiedDate': row[3],
+                'BusinessEntityID': row[0],
+                'NationalIDNumber': row[1],
+                'LoginID': row[2],
+                'OrganizationNode': row[3],
+                'OrganizationLevel': row[4],
+                'JobTitle': row[5],
+                'BirthDate': row[6],
+                'MaritalStatus': row[7],
+                'Gender': row[8],
+                'HireDate': row[9],
+                'SalariedFlag': row[10],
+                'VacationHours': row[11],
+                'SickLeaveHours': row[12],
+                'CurrentFlag': row[13],
+                'RowGuid': row[14],
+                'ModifiedDate': row[15],
                 'RawIngestionTime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
                 'RawFileSize': self.raw_file_size
             }
@@ -38,12 +50,12 @@ def run():
         temp_location='gs://gcp-de-batch-data-3/temp',
         staging_location='gs://gcp-de-batch-data-3/staging',
         region='us-east1',
-        job_name='Department-raw-ingestion-job',
+        job_name='emp-raw-job',
         save_main_session=True  # Required for some Beam runners to serialize classes
     )
 
-    input_file = 'gs://gcp-de-batch-data-3/Department.csv'
-    output_table = 'gcp-de-batch-sim-464816:Employee_Details_raw.Department_raw'
+    input_file = 'gs://gcp-de-batch-data-3/Employee.csv'
+    output_table = 'gcp-de-batch-sim-464816:Employee_Details_raw.Employee_raw'
 
     with beam.Pipeline(options=options) as p:
         (
@@ -54,8 +66,24 @@ def run():
                 table=output_table,
                 method='STREAMING_INSERTS',
                 schema=(
-                    'DepartmentID:INTEGER, Name:STRING, GroupName:STRING, '
-                    'ModifiedDate:STRING, RawIngestionTime:TIMESTAMP, RawFileSize:STRING'
+                    'BusinessEntityID:STRING,'
+                    'NationalIDNumber:STRING,'
+                    'LoginID:STRING,'
+                    'OrganizationNode:STRING,'
+                    'OrganizationLevel:STRING,'
+                    'JobTitle:STRING,'
+                    'BirthDate:STRING,'
+                    'MaritalStatus:STRING,'
+                    'gender:STRING,'
+                    'HireDate:STRING,'
+                    'SalariedFlag:STRING,'
+                    'VacationHours:INTEGER,'
+                    'SickLeaveHours:INTEGER,'
+                    'CurrentFlag:STRING,'
+                    'RowGuid:STRING,'
+                    'ModifiedDate:STRING,'
+                    'RawIngestionTime:TIMESTAMP,'
+                    'RawFileSize:STRING'
                 ),
                 create_disposition='CREATE_IF_NEEDED',
                 write_disposition='WRITE_APPEND'

@@ -16,10 +16,11 @@ class ParseDepartmentFn(beam.DoFn):
             row = next(csv.reader([element]))
             parsed = {
                 'BusinessEntityID': row[0],
-                'RateChangeDate': row[1],
-                'Rate': row[2],
-                'PayFrequency': row[3],
-                'ModifiedDate': row[4],
+                'DepartmentID': row[1],
+                'ShiftID': row[2],
+                'StartDate': row[3],
+                'EndDate': row[4],
+                'ModifiedDate': row[5],
                 'RawIngestionTime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
                 'RawFileSize': self.raw_file_size
             }
@@ -39,12 +40,12 @@ def run():
         temp_location='gs://gcp-de-batch-data-3/temp',
         staging_location='gs://gcp-de-batch-data-3/staging',
         region='us-east1',
-        job_name='EmpPayHis-raw-ingestion-job',
+        job_name='empdephis-raw-job',
         save_main_session=True  # Required for some Beam runners to serialize classes
     )
 
-    input_file = 'gs://gcp-de-batch-data-3/EmployeePayHistory.csv'
-    output_table = 'gcp-de-batch-sim-464816:Employee_Details_raw.EmployeePayHistory_raw'
+    input_file = 'gs://gcp-de-batch-data-3/EmployeeDepartmentHistory.csv'
+    output_table = 'gcp-de-batch-sim-464816:Employee_Details_raw.EmployeeDepartmentHistory_raw'
 
     with beam.Pipeline(options=options) as p:
         (
@@ -55,8 +56,8 @@ def run():
                 table=output_table,
                 method='STREAMING_INSERTS',
                 schema=(
-                    'BusinessEntityID:INTEGER, RateChangeDate:STRING, Rate:FLOAT, '
-                    'PayFrequency:INTEGER, ModifiedDate:STRING, '
+                    'BusinessEntityID:INTEGER, DepartmentID:INTEGER, ShiftID:INTEGER, '
+                    'StartDate:DATE, EndDate:DATE, ModifiedDate:STRING, '
                     'RawIngestionTime:TIMESTAMP, RawFileSize:STRING'
                 ),
                 create_disposition='CREATE_IF_NEEDED',
