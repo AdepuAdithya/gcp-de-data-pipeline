@@ -8,27 +8,18 @@ from datetime import datetime, date
 project ="gcp-de-batch-sim-464816"
 region = "us-central1"
 bucket = "gcp-de-batch-data-3"
-file_name = "Department.csv"
-dataset = "Employee_Details_raw"
-table   = "Department_raw"
-input = f"gs://{bucket}/{file_name}"
-output = f"{project}.{dataset}.{table}"
+raw_dataset = "Employee_Details_raw"
+staging_dataset = "Employee_Details_stg"
+raw_table   = "Department_raw"
+staging_table   = "Department_stg"
+input = f"{project}.{raw_dataset}.{raw_table}"
+output = f"{project}.{staging_dataset}.{staging_table}"
 temp_location = f"gs://{bucket}/temp"
 staging_location = f"gs://{bucket}/staging"
 
-# CSV File Parsing
-def parsecsv(line):
-    fields = line.split(',')
-    parsed = {
-        'DepartmentID': int(fields[0]),
-        'Name': fields[1],
-        'GroupName': fields[2],
-        'ModifiedDate': fields[3],
-        'RawIngestionTime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'LoadDate': date.today().isoformat()        
-    }
-    print(f"Parsed output: {parsed}")
-    return parsed
+def add_StagingIngestionTime(record):
+    record['StagingIngestionTime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    return record
 
 #Pipeline Configuration
 def run():
@@ -38,20 +29,17 @@ def run():
         region=region,
         temp_location=temp_location,
         staging_location=staging_location,
-        job_name='dep-raw-job',
+        job_name='dep-staging-job',
         save_main_session=True
     )
     with beam.Pipeline(options=options) as p:
         (
             p
-            | 'Read CSV' >> beam.io.ReadFromText(input, skip_header_lines=1)
-            | 'Parse CSV' >> beam.Map(parsecsv)
+            | 'Read from BigQuery' >> beam.io.ReadFromBigQuery(query=f'SELECT * FROM `{input}`', use_standard_sql=True)
+            | 'Add Staging Ingestion Time' >> beam.Map(add_StagingIngestionTime)
             | 'Write to BigQuery' >> WriteToBigQuery(
                 table=output,
-                schema=(
-                    'DepartmentID:INTEGER, Name:STRING, GroupName:STRING, '
-                    'ModifiedDate:STRING, RawIngestionTime:TIMESTAMP, LoadDate:DATE'
-                ),
+                schema=('DepartmentID:INTEGER, Name:STRING, GroupName:STRING, ModifiedDate:TIMESTAMP, RawIngestionTime:TIMESTAMP, LoadDate:DATE, StagingIngestionTime:TIMESTAMP'),
                 create_disposition = beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
                 write_disposition= beam.io.BigQueryDisposition.WRITE_APPEND
             )
