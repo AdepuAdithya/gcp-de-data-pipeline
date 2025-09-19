@@ -2,7 +2,7 @@
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions as PO
 from apache_beam.io.gcp.bigquery import WriteToBigQuery
-from datetime import datetime, date
+from datetime import datetime
 
 #Configurations/Parameters
 project ="gcp-de-batch-sim-464816"
@@ -18,8 +18,21 @@ temp_location = f"gs://{bucket}/temp"
 staging_location = f"gs://{bucket}/staging"
 
 def add_StagingIngestionTime(record):
-    record['StagingIngestionTime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    record['StagingIngestionTime'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     return record
+
+# BigQuery Schema for Raw Layer
+schema = {
+    'fields': [
+        {'name': 'DepartmentID', 'type': 'INTEGER', 'mode': 'REQUIRED'},
+        {'name': 'Name', 'type': 'STRING', 'mode': 'REQUIRED'},
+        {'name': 'GroupName', 'type': 'STRING', 'mode': 'REQUIRED'},
+        {'name': 'ModifiedDate', 'type': 'TIMESTAMP', 'mode': 'REQUIRED'},
+        {'name': 'RawIngestionTime', 'type': 'TIMESTAMP', 'mode': 'REQUIRED'},
+        {'name': 'LoadDate', 'type': 'DATE', 'mode': 'REQUIRED'},
+        {'name': 'StagingIngestionTime', 'type': 'TIMESTAMP', 'mode': 'REQUIRED'}
+    ]
+}
 
 #Pipeline Configuration
 def run():
@@ -39,7 +52,7 @@ def run():
             | 'Add Staging Ingestion Time' >> beam.Map(add_StagingIngestionTime)
             | 'Write to BigQuery' >> WriteToBigQuery(
                 table=output,
-                schema=('DepartmentID:INTEGER, Name:STRING, GroupName:STRING, ModifiedDate:TIMESTAMP, RawIngestionTime:TIMESTAMP, LoadDate:DATE, StagingIngestionTime:TIMESTAMP'),
+                schema=schema,
                 create_disposition = beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
                 write_disposition= beam.io.BigQueryDisposition.WRITE_APPEND
             )
