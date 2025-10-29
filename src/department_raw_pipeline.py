@@ -5,10 +5,10 @@ from apache_beam.io.gcp.bigquery import WriteToBigQuery
 from datetime import datetime, date, timezone
 
 # Configurations / Parameters
-project = "gcp-de-batch-sim-464816"
+project = "gcp-batch-sim"
 region = "us-central1"
-bucket = "gcp-de-batch-data-3"
-file_name = "Department.txt"
+bucket = "gcp-de-batch-data"
+file_name = "Department.csv"
 dataset = "Employee_Details_raw"
 table = "Department_raw"
 input = f"gs://{bucket}/{file_name}"

@@ -1,6 +1,6 @@
 import sys
-from raw_pipeline import run as run_raw_pipeline
-from staging_pipeline import run as run_staging_pipeline
+from department_raw_pipeline import run as run_raw_pipeline
+from department_staging_pipeline import run as run_staging_pipeline
 
 if __name__ == '__main__':
     # Listing all configurations for raw ingestion

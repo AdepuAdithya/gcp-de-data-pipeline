@@ -5,9 +5,9 @@ from apache_beam.io.gcp.bigquery import WriteToBigQuery
 from datetime import datetime
 
 #Configurations/Parameters
-project ="gcp-de-batch-sim-464816"
+project ="gcp-batch-sim"
 region = "us-central1"
-bucket = "gcp-de-batch-data-3"
+bucket = "gcp-de-batch-data"
 raw_dataset = "Employee_Details_raw"
 staging_dataset = "Employee_Details_stg"
 raw_table   = "Department_raw"
@@ -21,7 +21,7 @@ def add_StagingIngestionTime(record):
     record['StagingIngestionTime'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     return record
 
-# BigQuery Schema for Raw Layer
+# BigQuery Schema for Staging Layer
 schema = {
     'fields': [
         {'name': 'DepartmentID', 'type': 'INTEGER', 'mode': 'REQUIRED'},
@@ -33,6 +33,17 @@ schema = {
         {'name': 'StagingIngestionTime', 'type': 'TIMESTAMP', 'mode': 'REQUIRED'}
     ]
 }
+
+def convert_types(record):
+    # Adjust datetime formats if different in your data
+    new_record = {}
+    new_record['DepartmentID'] = int(record['DepartmentID'])
+    new_record['Name'] = record['Name']
+    new_record['GroupName'] = record['GroupName']
+    new_record['ModifiedDate'] = datetime.strptime(record['ModifiedDate'], '%Y-%m-%d %H:%M:%S')
+    new_record['RawIngestionTime'] = record['RawIngestionTime']
+    new_record['LoadDate'] = record['LoadDate']
+    return new_record
 
 #Pipeline Configuration
 def run():
@@ -49,6 +60,7 @@ def run():
         (
             p
             | 'Read from BigQuery' >> beam.io.ReadFromBigQuery(query=f'SELECT * FROM `{input}`', use_standard_sql=True)
+            | 'Convert Field Types' >> beam.Map(convert_types)
             | 'Add Staging Ingestion Time' >> beam.Map(add_StagingIngestionTime)
             | 'Write to BigQuery' >> WriteToBigQuery(
                 table=output,
