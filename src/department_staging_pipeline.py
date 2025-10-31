@@ -5,9 +5,9 @@ from apache_beam.io.gcp.bigquery import WriteToBigQuery
 from datetime import datetime
 
 #Configurations/Parameters
-project ="gcp-batch-sim"
+project ="famous-athlete-476816-f8"
 region = "us-central1"
-bucket = "gcp-de-batch-data"
+bucket = "gcp-de-batch-data-01"
 raw_dataset = "Employee_Details_raw"
 staging_dataset = "Employee_Details_stg"
 raw_table   = "Department_raw"
