@@ -66,7 +66,7 @@ def convert_types(record):
     new_record['VacationHours'] = int(record['VacationHours'])
     new_record['SickLeaveHours'] = int(record['SickLeaveHours'])
     new_record['CurrentFlag'] = record['CurrentFlag'].lower() in ['true', '1', 't', 'yes']
-    new_record['ModifiedDate'] = datetime.strptime(record['ModifiedDate'], '%Y-%m-%d %H:%M:%S')
+    new_record['ModifiedDate'] = datetime.strptime(record['ModifiedDate'], '%d-%m-%Y %H:%M:%S')
     new_record['RawIngestionTime'] = record['RawIngestionTime']
     new_record['LoadDate'] = record['LoadDate']
     return new_record

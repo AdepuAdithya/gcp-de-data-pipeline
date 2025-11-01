@@ -40,7 +40,7 @@ def convert_types(record):
     new_record['DepartmentID'] = int(record['DepartmentID'])
     new_record['Name'] = record['Name']
     new_record['GroupName'] = record['GroupName']
-    new_record['ModifiedDate'] = datetime.strptime(record['ModifiedDate'], '%Y-%m-%d %H:%M:%S')
+    new_record['ModifiedDate'] = datetime.strptime(record['ModifiedDate'], '%d-%m-%Y %H:%M:%S')
     new_record['RawIngestionTime'] = record['RawIngestionTime']
     new_record['LoadDate'] = record['LoadDate']
     return new_record
