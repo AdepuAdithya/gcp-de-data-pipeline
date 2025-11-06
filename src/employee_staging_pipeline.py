@@ -1,21 +1,8 @@
-#Importing Libraries
 import apache_beam as beam
-from apache_beam.options.pipeline_options import PipelineOptions as PO
+from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.io.gcp.bigquery import WriteToBigQuery
 from datetime import datetime
-
-#Configurations/Parameters
-project ="famous-athlete-476816-f8"
-region = "us-central1"
-bucket = "gcp-de-batch-data-01"
-raw_dataset = "Employee_Details_raw"
-staging_dataset = "Employee_Details_stg"
-raw_table   = "Employee_raw"
-staging_table   = "Employee_stg"
-input = f"{project}.{raw_dataset}.{raw_table}"
-output = f"{project}.{staging_dataset}.{staging_table}"
-temp_location = f"gs://{bucket}/temp"
-staging_location = f"gs://{bucket}/staging"
+import argparse
 
 def add_StagingIngestionTime(record):
     record['StagingIngestionTime'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
@@ -52,7 +39,6 @@ def parse_date(date_str):
     raise ValueError(f"Date {date_str} does not match expected formats")
 
 def convert_types(record):
-    # Adjust datetime formats if different in your data
     new_record = {}
     new_record['BusinessEntityID'] = int(record['BusinessEntityID'])
     new_record['NationalIDNumber'] = record['NationalIDNumber']
@@ -71,28 +57,24 @@ def convert_types(record):
     new_record['LoadDate'] = record['LoadDate']
     return new_record
 
-#Pipeline Configuration
 def run():
-    options = PO (
-        runner='DataflowRunner',
-        project=project,
-        region=region,
-        temp_location=temp_location,
-        staging_location=staging_location,
-        job_name='emp-staging-job',
-        save_main_session=True
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input')
+    parser.add_argument('--output')
+    args, beam_args = parser.parse_known_args()
+
+    options = PipelineOptions(beam_args)
     with beam.Pipeline(options=options) as p:
         (
             p
-            | 'Read from BigQuery' >> beam.io.ReadFromBigQuery(query=f'SELECT * FROM `{input}`', use_standard_sql=True)
+            | 'Read from BigQuery' >> beam.io.ReadFromBigQuery(query=f'SELECT * FROM `{args.input}`', use_standard_sql=True)
             | 'Convert Field Types' >> beam.Map(convert_types)
             | 'Add Staging Ingestion Time' >> beam.Map(add_StagingIngestionTime)
             | 'Write to BigQuery' >> WriteToBigQuery(
-                table=output,
+                table=args.output,
                 schema=schema,
-                create_disposition = beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
-                write_disposition= beam.io.BigQueryDisposition.WRITE_APPEND
+                create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
+                write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND
             )
         )
 

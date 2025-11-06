@@ -1,25 +1,13 @@
-# Importing Libraries
 import apache_beam as beam
-from apache_beam.options.pipeline_options import PipelineOptions as PO
+from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.io.gcp.bigquery import WriteToBigQuery
 from datetime import datetime, date, timezone
-
-# Configurations / Parameters
-project = "famous-athlete-476816-f8"
-region = "us-central1"
-bucket = "gcp-de-batch-data-01"
-file_name = "Department.csv"
-dataset = "Employee_Details_raw"
-table = "Department_raw"
-input = f"gs://{bucket}/{file_name}"
-output = f"{project}:{dataset}.{table}"
-temp_location = f"gs://{bucket}/temp"
-staging_location = f"gs://{bucket}/staging"
+import argparse
 
 # CSV File Parsing
 def parsetxt(line):
     fields = line.strip().split(',')
-    row = {
+    return {
         'DepartmentID': fields[0].strip(),
         'Name': fields[1].strip(),
         'GroupName': fields[2].strip(),
@@ -27,9 +15,8 @@ def parsetxt(line):
         'RawIngestionTime': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S'),
         'LoadDate': date.today().isoformat()
     }
-    return row
 
-# BigQuery Schema for Raw Layer
+# BigQuery Schema
 schema = {
     'fields': [
         {'name': 'DepartmentID', 'type': 'STRING', 'mode': 'REQUIRED'},
@@ -41,25 +28,20 @@ schema = {
     ]
 }
 
-# Pipeline Definition
 def run():
-    options = PO(
-        runner='DataflowRunner',
-        project=project,
-        region=region,
-        temp_location=temp_location,
-        staging_location=staging_location,
-        job_name='dep-raw-job',
-        save_main_session=True
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input')
+    parser.add_argument('--output')
+    args, beam_args = parser.parse_known_args()
 
+    options = PipelineOptions(beam_args)
     with beam.Pipeline(options=options) as p:
         (
             p
-            | 'Read TXT' >> beam.io.ReadFromText(input, skip_header_lines=1)
-            | 'Parse TXT' >> beam.Map(parsetxt)
+            | 'Read CSV' >> beam.io.ReadFromText(args.input, skip_header_lines=1)
+            | 'Parse CSV' >> beam.Map(parsetxt)
             | 'Write to BigQuery' >> WriteToBigQuery(
-                table=output,
+                table=args.output,
                 schema=schema,
                 create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
                 write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND
