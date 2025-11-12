@@ -31,7 +31,7 @@ schema = {
 }
 
 def parse_date(date_str):
-    for fmt in ('%Y-%m-%d', '%m/%d/%Y'):
+    for fmt in ('%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y'):
         try:
             return datetime.strptime(date_str, fmt).date()
         except ValueError:
